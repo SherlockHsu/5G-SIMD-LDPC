@@ -52,7 +52,7 @@ int main()
 
 	/* set parameters */
 	B = 3840;
-	R = 512;//512,768,853
+	R = 768;//512,768,853
 	I_max = 10;
 	decoder_mode = DECODER_MODE_OMS;
 
@@ -200,7 +200,7 @@ int main()
 	avg_latency /= test_size;
 	printf("\n");
 	printf("Average Throughput:\t%.2lfMbps\n", avg_tp);
-	printf("Average Latency:\t%lfus\n", avg_latency);
+	printf("Average Latency:\t%.2lfus\n", avg_latency);
 
 	free(info_bits_32);
 	free(info_bits);
