@@ -30,6 +30,7 @@ int main()
 	struct timeval start, end;
 	long timeuse;
 #endif
+	double avg_tp, avg_latency;
 
 	int32_t i, indx_block, indx_ebn0, sum_err_bits, test_size;
 	int32_t B, R, I_max, decoder_mode, G;
@@ -90,6 +91,9 @@ int main()
 	vslNewStream(&stream_b, VSL_BRNG_MCG31, 1);
 
 	fp = fopen("BER.txt", "a");
+
+	avg_tp = 0.0;
+	avg_latency = 0.0;
 
 	/* test loop start */
 	for (indx_ebn0 = 0; indx_ebn0 < test_size; indx_ebn0++)
@@ -180,14 +184,23 @@ int main()
 
 		/* print results */
 		printf("Eb/N0:%.2f:\tBER:\t%.2e(%d/%d)\n", EbN0_list[indx_ebn0], (float)sum_err_bits / B / BLOCK_SIZE, sum_err_bits, B * BLOCK_SIZE);
-		printf("encode_run_time:%lfs\n", encode_run_time);
+		printf("encode_Latency:%lfus\n", encode_run_time * 1e6 / BLOCK_SIZE);
 		printf("encode_Throughput:%.2lfMbps\n", (double)B * BLOCK_SIZE / encode_run_time / 1e6);
-		printf("decode_run_time:%lfs\n", decode_run_time);
+		printf("decode_Latency:%lfus\n", decode_run_time * 1e6 / BLOCK_SIZE);
 		printf("decode_Throughput:%.2lfMbps\n", (double)B * BLOCK_SIZE / decode_run_time / 1e6);
 		fprintf(fp, "%.2e\t", (float)sum_err_bits / B / BLOCK_SIZE);
+
+		avg_tp += (double)B * BLOCK_SIZE / decode_run_time / 1e6;
+		avg_latency += decode_run_time * 1e6 / BLOCK_SIZE;
 	}
 	fprintf(fp, "\n");
 	fclose(fp);
+
+	avg_tp /= test_size;
+	avg_latency /= test_size;
+	printf("\n");
+	printf("Average Throughput:\t%.2lfMbps\n", avg_tp);
+	printf("Average Latency:\t%lfus\n", avg_latency);
 
 	free(info_bits_32);
 	free(info_bits);
