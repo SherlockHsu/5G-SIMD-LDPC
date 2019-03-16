@@ -51,8 +51,8 @@ int main()
 	FILE *fp;
 
 	/* set parameters */
-	B = 3840;
-	R = 853;//512,768,853
+	B = 8448;
+	R = 768;//512,768,853
 	I_max = 10;
 	decoder_mode = DECODER_MODE_OMS;
 
