@@ -2,3 +2,5 @@ main
 *.o
 BER.txt
 .vscode
+src
+lib/Makefile
