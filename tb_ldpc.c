@@ -52,7 +52,7 @@ int main()
 
 	/* set parameters */
 	B = 8448;
-	R = 853;
+	R = 768;
 	I_max = 10;
 	decoder_mode = DECODER_MODE_OMS;
 
