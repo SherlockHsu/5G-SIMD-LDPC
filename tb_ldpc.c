@@ -24,8 +24,8 @@ int main()
 	int B_list[2] = {8448, 3840};
 	int R_list[3] = {853, 768, 512};
 	int j, k;
-	for (int j = 0; j < 1; j++)
-		for (int k = 0; k < 2; k++)
+	for (int j = 0; j < 2; j++)
+		for (int k = 0; k < 3; k++)
 		{
 
 			double encode_run_time;
