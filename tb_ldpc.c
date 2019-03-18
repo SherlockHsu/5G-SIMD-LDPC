@@ -170,7 +170,7 @@ int main()
 #else
 					gettimeofday(&start, NULL);
 #endif
-					nr5g_ldpc_simd_decoder_param_init(ldpc_arg);
+					// nr5g_ldpc_simd_decoder_param_init(ldpc_arg);
 					nr5g_ldpc_simd_decoder(ldpc_arg->rdmed_llr, ldpc_arg, I_max, coef, decoder_mode, ldpc_arg->decoded_bits, decoded_llr);
 #if defined(_MSC_VER)
 					QueryPerformanceCounter(&num);

@@ -2,6 +2,8 @@
 #ifndef SIMD_LDPC_H
 #define SIMD_LDPC_H
 
+#define PAST_METHOD
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <immintrin.h>
@@ -73,9 +75,15 @@ typedef struct nr5g_ldpc_simd_t
 	__m256i *mask_avx2;			 // mask1 for flag=2(length:whole_degree)
 	__m256i *mask_pre_avx2;		 // mask2 for flag=2(length:whole_degree)
 	__m256i endmask_avx2;		 // mask for flag=1
+#ifdef PAST_METHOD	
+	__m512i *mask_avx512;		 // mask1 for flag=2(length:whole_degree)
+	__m512i *mask_pre_avx512;	 // mask2 for flag=2(length:whole_degree)
+	__m512i endmask_avx512;		 // mask for flag=1
+#else
 	__mmask64 *mmask_avx512;	 // mmask1 for flag=2(length:whole_degree)
 	__mmask64 *mmask_pre_avx512; // mmask2 for flag=2(length:whole_degree)
 	__mmask64 endmmask_avx512;   // mmask for flag=1
+#endif
 
 } nr5g_ldpc_simd_t;
 
