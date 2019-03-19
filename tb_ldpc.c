@@ -25,7 +25,7 @@
 
 #define BLOCK_SIZE 10000
 #define EBN0_SIZE 6
-#define CORE_NUM 1
+#define CORE_NUM 2
 
 int num;
 pthread_mutex_t mutex;
@@ -70,11 +70,15 @@ void ldpc_decoder_thrd(void *arg)
 #if defined(_MSC_VER)
 	QueryPerformanceCounter(&num);
 	end = num.QuadPart;
+	pthread_mutex_lock(&demutex);
 	decode_run_time += (double)(end - start) / freq;
+	pthread_mutex_unlock(&demutex);
 #else
 	gettimeofday(&end, NULL);
 	timeuse = 1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec;
+	pthread_mutex_lock(&demutex);
 	decode_run_time += (double)timeuse / 1000000.0;
+	pthread_mutex_unlock(&demutex);
 #endif
 	// sem_post(h->done_sem);
 	pthread_mutex_lock(&mutex);
