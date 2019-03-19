@@ -1,5 +1,6 @@
 // version 2.2
-#include "inc/simd_ldpc.h"
+#include "simd_ldpc.h"
+#include "thread_pool.h"
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -9,6 +10,7 @@
 #include <time.h>
 #include <mmintrin.h>
 #include <mkl.h>
+#include <semaphore.h>
 
 #if defined(_MSC_VER)
 #include <windows.h>
@@ -18,6 +20,29 @@
 
 #define BLOCK_SIZE 10000
 #define EBN0_SIZE 6
+#define CORE_NUM 1
+
+typedef struct ldpc_decoder_thrd_t
+{
+	const float *llr;
+	nr5g_ldpc_simd_t *h;
+	int32_t I_max;
+	float coef;
+	int32_t decoder_mode;
+	int8_t *decoded_bits;
+	float *decoded_llr;
+
+	sem_t *done_sem;
+} ldpc_decoder_thrd_t;
+
+void ldpc_decoder_thrd(void *arg)
+{
+    ldpc_decoder_thrd_t *h = (ldpc_decoder_thrd_t *)arg;
+
+    nr5g_ldpc_simd_decoder(h->llr, h->h, h->I_max, h->coef, h->decoder_mode, h->decoded_bits, h->decoded_llr);
+
+    sem_post(h->done_sem);
+}
 
 int main()
 {
@@ -27,7 +52,6 @@ int main()
 	for (int j = 0; j < 2; j++)
 		for (int k = 0; k < 3; k++)
 		{
-
 			double encode_run_time;
 			double decode_run_time;
 #if defined(_MSC_VER)
@@ -40,22 +64,26 @@ int main()
 			double avg_tp, avg_latency;
 
 			int32_t i, indx_block, indx_ebn0, sum_err_bits, test_size;
-			int32_t B, R, I_max, decoder_mode, G;
+			int32_t B, R, I_max, decoder_mode;
 			float coef;
-			nr5g_ldpc_simd_t *ldpc_arg;
+			nr5g_ldpc_simd_t *ldpc_arg[CORE_NUM];
 			VSLStreamStatePtr stream_g;
 			VSLStreamStatePtr stream_b;
-			int8_t *info_bits;
-			int32_t *info_bits_32;
-			int8_t *rmed_bits;
-			float *mapped_sig;
-			float *noise;
-			float *llr;
-			float *decoded_llr;
-			int8_t *decbs_bits;
+			int8_t *info_bits[CORE_NUM];
+			int32_t *info_bits_32[CORE_NUM];
+			int8_t *rmed_bits[CORE_NUM];
+			float *mapped_sig[CORE_NUM];
+			float *noise[CORE_NUM];
+			float *llr[CORE_NUM];
+			float *decoded_llr[CORE_NUM];
+			int8_t *decbs_bits[CORE_NUM];
 			float EbN0, sigma2, sigma;
 			int32_t err_bits[BLOCK_SIZE];
 			FILE *fp;
+
+			ldpc_decoder_thrd_t *ldpct[CORE_NUM];
+			sem_t done_sem;
+			pool_init(0, CORE_NUM, 0);
 
 			/* set parameters */
 			// B = 8448;
@@ -83,18 +111,31 @@ int main()
 			test_size = EBN0_SIZE;
 
 			/* initialize */
-			ldpc_arg = (nr5g_ldpc_simd_t *)malloc(sizeof(nr5g_ldpc_simd_t));
-			nr5g_ldpc_simd_init(ldpc_arg, B, R);
+			for (int c = 0; c < CORE_NUM; ++c)
+			{
+				ldpc_arg[c] = (nr5g_ldpc_simd_t *)malloc(sizeof(nr5g_ldpc_simd_t));
+				nr5g_ldpc_simd_init(ldpc_arg[c], B, R);
 
-			G = ldpc_arg->G;
-			info_bits_32 = (int32_t *)malloc(sizeof(int32_t) * ldpc_arg->B);
-			info_bits = (int8_t *)malloc(sizeof(int8_t) * ldpc_arg->B);
-			rmed_bits = (int8_t *)malloc(sizeof(int8_t) * ldpc_arg->G);
-			mapped_sig = (float *)malloc(sizeof(float) * ldpc_arg->G);
-			noise = (float *)malloc(sizeof(float) * ldpc_arg->G);
-			llr = (float *)malloc(sizeof(float) * ldpc_arg->G);
-			decoded_llr = (float *)malloc(sizeof(float) * ldpc_arg->G);
-			decbs_bits = (int8_t *)malloc(sizeof(int8_t) * ldpc_arg->B);
+				info_bits_32[c] = (int32_t *)malloc(sizeof(int32_t) * ldpc_arg[c]->B);
+				info_bits[c] = (int8_t *)malloc(sizeof(int8_t) * ldpc_arg[c]->B);
+				rmed_bits[c] = (int8_t *)malloc(sizeof(int8_t) * ldpc_arg[c]->G);
+				mapped_sig[c] = (float *)malloc(sizeof(float) * ldpc_arg[c]->G);
+				noise[c] = (float *)malloc(sizeof(float) * ldpc_arg[c]->G);
+				llr[c] = (float *)malloc(sizeof(float) * ldpc_arg[c]->G);
+				decoded_llr[c] = (float *)malloc(sizeof(float) * ldpc_arg[c]->G);
+				decbs_bits[c] = (int8_t *)malloc(sizeof(int8_t) * ldpc_arg[c]->B);
+
+				sem_init(&done_sem, 0, 0);
+				ldpct[c] = (ldpc_decoder_thrd_t *)malloc(sizeof(ldpc_decoder_thrd_t));
+				ldpct[c]->llr = llr[c];
+				ldpct[c]->h = ldpc_arg[c];
+				ldpct[c]->I_max = I_max;
+				ldpct[c]->coef = coef;
+				ldpct[c]->decoder_mode = decoder_mode;
+				ldpct[c]->decoded_bits = ldpc_arg[c]->decoded_bits;
+				ldpct[c]->decoded_llr = decoded_llr[c];
+				ldpct[c]->done_sem = &done_sem;
+			}
 
 			vslNewStream(&stream_g, VSL_BRNG_MCG31, 0);
 			vslNewStream(&stream_b, VSL_BRNG_MCG31, 1);
@@ -119,47 +160,50 @@ int main()
 					err_bits[indx_block] = 0;
 
 					/* generate random tbs */
-					viRngBernoulli(VSL_RNG_METHOD_BERNOULLI_ICDF, stream_b, B, info_bits_32, 0.5);
-					for (i = 0; i < B; i++)
-						info_bits[i] = (int8_t)info_bits_32[i];
+					for (int c = 0; c < CORE_NUM; ++c)
+					{
+						viRngBernoulli(VSL_RNG_METHOD_BERNOULLI_ICDF, stream_b, B, info_bits_32[c], 0.5);
+						for (i = 0; i < B; i++)
+							info_bits[c][i] = (int8_t)info_bits_32[c][i];
 
-					/* cbs */
-					nr5g_ldpc_simd_cbs(info_bits, ldpc_arg, ldpc_arg->cbs_bits);
+						/* cbs */
+						nr5g_ldpc_simd_cbs(info_bits[c], ldpc_arg[c], ldpc_arg[c]->cbs_bits);
 
-					/* encode */
+						/* encode */
 #if defined(_MSC_VER)
-					QueryPerformanceFrequency(&num);
-					freq = num.QuadPart;
-					QueryPerformanceCounter(&num);
-					start = num.QuadPart;
+						QueryPerformanceFrequency(&num);
+						freq = num.QuadPart;
+						QueryPerformanceCounter(&num);
+						start = num.QuadPart;
 #else
-					gettimeofday(&start, NULL);
+						gettimeofday(&start, NULL);
 #endif
-					nr5g_ldpc_simd_encoder(ldpc_arg->cbs_bits, ldpc_arg, ldpc_arg->coded_bits);
+						nr5g_ldpc_simd_encoder(ldpc_arg[c]->cbs_bits, ldpc_arg[c], ldpc_arg[c]->coded_bits);
 #if defined(_MSC_VER)
-					QueryPerformanceCounter(&num);
-					end = num.QuadPart;
-					encode_run_time += (double)(end - start) / freq;
+						QueryPerformanceCounter(&num);
+						end = num.QuadPart;
+						encode_run_time += (double)(end - start) / freq;
 #else
-					gettimeofday(&end, NULL);
-					timeuse = 1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec;
-					encode_run_time += (double)timeuse / 1000000.0;
+						gettimeofday(&end, NULL);
+						timeuse = 1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec;
+						encode_run_time += (double)timeuse / 1000000.0;
 #endif
 
-					/* rate matching */
-					nr5g_ldpc_simd_rate_matching(ldpc_arg->coded_bits, ldpc_arg, rmed_bits);
+						/* rate matching */
+						nr5g_ldpc_simd_rate_matching(ldpc_arg[c]->coded_bits, ldpc_arg[c], rmed_bits[c]);
 
-					/* BPSK map */
-					for (i = 0; i < G; i++)
-						mapped_sig[i] = (float)2 * rmed_bits[i] - 1;
+						/* BPSK map */
+						for (i = 0; i < ldpc_arg[c]->G; i++)
+							mapped_sig[c][i] = (float)2 * rmed_bits[c][i] - 1;
 
-					/* pass AWGN channel */
-					vsRngGaussian(VSL_RNG_METHOD_GAUSSIANMV_BOXMULLER, stream_g, G, noise, 0.0, sigma);
-					for (i = 0; i < G; i++)
-						llr[i] = 2 * (mapped_sig[i] + noise[i]) / sigma2;
+						/* pass AWGN channel */
+						vsRngGaussian(VSL_RNG_METHOD_GAUSSIANMV_BOXMULLER, stream_g, ldpc_arg[c]->G, noise[c], 0.0, sigma);
+						for (i = 0; i < ldpc_arg[c]->G; i++)
+							llr[c][i] = 2 * (mapped_sig[c][i] + noise[c][i]) / sigma2;
 
-					/* rate dematching */
-					nr5g_ldpc_simd_rate_dematching(llr, ldpc_arg, ldpc_arg->rdmed_llr);
+						/* rate dematching */
+						nr5g_ldpc_simd_rate_dematching(llr[c], ldpc_arg[c], ldpc_arg[c]->rdmed_llr);
+					}
 
 					/* decode */
 #if defined(_MSC_VER)
@@ -170,8 +214,12 @@ int main()
 #else
 					gettimeofday(&start, NULL);
 #endif
-					// nr5g_ldpc_simd_decoder_param_init(ldpc_arg);
-					nr5g_ldpc_simd_decoder(ldpc_arg->rdmed_llr, ldpc_arg, I_max, coef, decoder_mode, ldpc_arg->decoded_bits, decoded_llr);
+					// for (int c = 0; c < CORE_NUM; ++c)
+					// 	nr5g_ldpc_simd_decoder(ldpc_arg[c]->rdmed_llr, ldpc_arg[c], I_max, coef, decoder_mode, ldpc_arg[c]->decoded_bits, decoded_llr[c]);
+					for (int c = 0; c < CORE_NUM; ++c)
+						pool_add_task(ldpc_decoder_thrd, (void *)ldpct[c], 0);
+					for (int c = 0; c < CORE_NUM; ++c)
+						sem_wait(&done_sem);
 #if defined(_MSC_VER)
 					QueryPerformanceCounter(&num);
 					end = num.QuadPart;
@@ -182,14 +230,17 @@ int main()
 					decode_run_time += (double)timeuse / 1000000.0;
 #endif
 
-					/* decbs */
-					nr5g_ldpc_simd_decbs(ldpc_arg->decoded_bits, ldpc_arg, decbs_bits);
+					for (int c = 0; c < CORE_NUM; ++c)
+					{
+						/* decbs */
+						nr5g_ldpc_simd_decbs(ldpc_arg[c]->decoded_bits, ldpc_arg[c], decbs_bits[c]);
 
-					/* statistics */
-					for (i = 0; i < ldpc_arg->B; i++)
-						err_bits[indx_block] += (info_bits[i] == decbs_bits[i] ? 0 : 1);
+						/* statistics */
+						for (i = 0; i < ldpc_arg[c]->B; i++)
+							err_bits[indx_block] += (info_bits[c][i] == decbs_bits[c][i] ? 0 : 1);
 
-					sum_err_bits += err_bits[indx_block];
+						sum_err_bits += err_bits[indx_block];
+					}
 				}
 
 				/* print results */
@@ -200,7 +251,7 @@ int main()
 				// printf("decode_Throughput:%.2lfMbps\n", (double)B * BLOCK_SIZE / decode_run_time / 1e6);
 				// fprintf(fp, "%.2e\t", (float)sum_err_bits / B / BLOCK_SIZE);
 
-				avg_tp += (double)B * BLOCK_SIZE / decode_run_time / 1e6;
+				avg_tp += (double)B * BLOCK_SIZE *CORE_NUM / decode_run_time / 1e6;
 				avg_latency += decode_run_time * 1e6 / BLOCK_SIZE;
 			}
 			fprintf(fp, "\n");
@@ -212,16 +263,20 @@ int main()
 			printf("B = %d, R = %d\n", B, R);
 			printf("Average Throughput:\t%.2lfMbps\n", avg_tp);
 			printf("Average Latency:\t%.2lfus\n", avg_latency);
-
-			free(info_bits_32);
-			free(info_bits);
-			free(rmed_bits);
-			free(mapped_sig);
-			free(noise);
-			free(llr);
-			free(decoded_llr);
-			free(decbs_bits);
-			free_nr5g_ldpc_simd_t(ldpc_arg);
+			for (int c = 0; c < CORE_NUM; ++c)
+			{
+				free(info_bits_32[c]);
+				free(info_bits[c]);
+				free(rmed_bits[c]);
+				free(mapped_sig[c]);
+				free(noise[c]);
+				free(llr[c]);
+				free(decoded_llr[c]);
+				free(decbs_bits[c]);
+				free_nr5g_ldpc_simd_t(ldpc_arg[c]);
+			}
+			sem_destroy(&done_sem);
+			pool_destroy(0);
 		}
 
 	return 0;
