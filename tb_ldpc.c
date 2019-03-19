@@ -65,7 +65,8 @@ void ldpc_decoder_thrd(void *arg)
 #else
 	gettimeofday(&start, NULL);
 #endif
-	nr5g_ldpc_simd_decoder(h->llr, h->h, h->I_max, h->coef, h->decoder_mode, h->decoded_bits, h->decoded_llr);
+	for (int i = 0; i < BLOCK_SIZE; ++i)
+		nr5g_ldpc_simd_decoder(h->llr, h->h, h->I_max, h->coef, h->decoder_mode, h->decoded_bits, h->decoded_llr);
 #if defined(_MSC_VER)
 	QueryPerformanceCounter(&num);
 	end = num.QuadPart;
@@ -115,7 +116,7 @@ int main()
 			float *decoded_llr[CORE_NUM];
 			int8_t *decbs_bits[CORE_NUM];
 			float EbN0, sigma2, sigma;
-			int32_t err_bits[BLOCK_SIZE];
+			int32_t err_bits[1];
 			FILE *fp;
 
 			ldpc_decoder_thrd_t *ldpct[CORE_NUM];
@@ -198,7 +199,7 @@ int main()
 				decode_run_time = 0.0;
 				pthread_mutex_unlock(&demutex);
 
-				for (indx_block = 0; indx_block < BLOCK_SIZE; indx_block++)
+				for (indx_block = 0; indx_block < 1; indx_block++)
 				{
 					err_bits[indx_block] = 0;
 
