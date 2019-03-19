@@ -8,7 +8,7 @@ INCLUDES = -I./inc
 
 LIBS = -lm -lpthread -lmkl_rt -fopenmp ./lib/libsimd_ldpc.a
 
-CCFLAGS = -Wall -march=core-avx512 -std=c99 -g
+CCFLAGS = -Wall -O3 -march=core-avx512 -std=c99 -g
 
 OUTPUT = main
 
