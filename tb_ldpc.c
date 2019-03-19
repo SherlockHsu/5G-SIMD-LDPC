@@ -2,6 +2,11 @@
 #include "simd_ldpc.h"
 #include "thread_pool.h"
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <sched.h>
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
