@@ -73,9 +73,7 @@ void ldpc_decoder_thrd(void *arg)
 #else
 	gettimeofday(&end, NULL);
 	timeuse = 1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec;
-	pthread_mutex_lock(&demutex);
 	decode_run_time += (double)timeuse / 1000000.0;
-	pthread_mutex_unlock(&demutex);
 #endif
 	// sem_post(h->done_sem);
 	pthread_mutex_lock(&mutex);
