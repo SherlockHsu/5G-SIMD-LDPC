@@ -22,6 +22,10 @@
 #define EBN0_SIZE 6
 #define CORE_NUM 1
 
+int num;
+pthread_mutex_t mutex;
+volatile int cnt;
+
 typedef struct ldpc_decoder_thrd_t
 {
 	const float *llr;
@@ -37,11 +41,14 @@ typedef struct ldpc_decoder_thrd_t
 
 void ldpc_decoder_thrd(void *arg)
 {
-    ldpc_decoder_thrd_t *h = (ldpc_decoder_thrd_t *)arg;
+	ldpc_decoder_thrd_t *h = (ldpc_decoder_thrd_t *)arg;
 
-    nr5g_ldpc_simd_decoder(h->llr, h->h, h->I_max, h->coef, h->decoder_mode, h->decoded_bits, h->decoded_llr);
+	nr5g_ldpc_simd_decoder(h->llr, h->h, h->I_max, h->coef, h->decoder_mode, h->decoded_bits, h->decoded_llr);
 
-    sem_post(h->done_sem);
+	// sem_post(h->done_sem);
+	pthread_mutex_lock(&mutex);
+	cnt++;
+	pthread_mutex_unlock(&mutex);
 }
 
 int main()
@@ -109,6 +116,10 @@ int main()
 
 			float EbN0_list[EBN0_SIZE] = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0};
 			test_size = EBN0_SIZE;
+			sem_init(&done_sem, 0, 0);
+			pthread_mutex_init(&mutex, NULL);
+			cnt = 0;
+			int temp = 0;
 
 			/* initialize */
 			for (int c = 0; c < CORE_NUM; ++c)
@@ -125,9 +136,8 @@ int main()
 				decoded_llr[c] = (float *)malloc(sizeof(float) * ldpc_arg[c]->G);
 				decbs_bits[c] = (int8_t *)malloc(sizeof(int8_t) * ldpc_arg[c]->B);
 
-				sem_init(&done_sem, 0, 0);
 				ldpct[c] = (ldpc_decoder_thrd_t *)malloc(sizeof(ldpc_decoder_thrd_t));
-				ldpct[c]->llr = llr[c];
+				ldpct[c]->llr = ldpc_arg[c]->rdmed_llr;
 				ldpct[c]->h = ldpc_arg[c];
 				ldpct[c]->I_max = I_max;
 				ldpct[c]->coef = coef;
@@ -218,8 +228,13 @@ int main()
 					// 	nr5g_ldpc_simd_decoder(ldpc_arg[c]->rdmed_llr, ldpc_arg[c], I_max, coef, decoder_mode, ldpc_arg[c]->decoded_bits, decoded_llr[c]);
 					for (int c = 0; c < CORE_NUM; ++c)
 						pool_add_task(ldpc_decoder_thrd, (void *)ldpct[c], 0);
-					for (int c = 0; c < CORE_NUM; ++c)
-						sem_wait(&done_sem);
+					// for (int c = 0; c < CORE_NUM; ++c)
+					// 	sem_wait(&done_sem);
+					while(cnt < CORE_NUM)
+						;
+					pthread_mutex_lock(&mutex);
+					cnt = 0;
+					pthread_mutex_unlock(&mutex);
 #if defined(_MSC_VER)
 					QueryPerformanceCounter(&num);
 					end = num.QuadPart;
@@ -244,14 +259,14 @@ int main()
 				}
 
 				/* print results */
-				// printf("Eb/N0:%.2f:\tBER:\t%.2e(%d/%d)\n", EbN0_list[indx_ebn0], (float)sum_err_bits / B / BLOCK_SIZE, sum_err_bits, B * BLOCK_SIZE);
-				// printf("encode_Latency:%lfus\n", encode_run_time * 1e6 / BLOCK_SIZE);
-				// printf("encode_Throughput:%.2lfMbps\n", (double)B * BLOCK_SIZE / encode_run_time / 1e6);
-				// printf("decode_Latency:%lfus\n", decode_run_time * 1e6 / BLOCK_SIZE);
-				// printf("decode_Throughput:%.2lfMbps\n", (double)B * BLOCK_SIZE / decode_run_time / 1e6);
-				// fprintf(fp, "%.2e\t", (float)sum_err_bits / B / BLOCK_SIZE);
+				printf("Eb/N0:%.2f:\tBER:\t%.2e(%d/%d)\n", EbN0_list[indx_ebn0], (float)sum_err_bits / B / BLOCK_SIZE, sum_err_bits, B * BLOCK_SIZE * CORE_NUM);
+				printf("encode_Latency:%lfus\n", encode_run_time * 1e6 / BLOCK_SIZE);
+				printf("encode_Throughput:%.2lfMbps\n", (double)B * BLOCK_SIZE * CORE_NUM / encode_run_time / 1e6);
+				printf("decode_Latency:%lfus\n", decode_run_time * 1e6 / BLOCK_SIZE);
+				printf("decode_Throughput:%.2lfMbps\n", (double)B * BLOCK_SIZE * CORE_NUM / decode_run_time / 1e6);
+				fprintf(fp, "%.2e\t", (float)sum_err_bits / B / BLOCK_SIZE / CORE_NUM);
 
-				avg_tp += (double)B * BLOCK_SIZE *CORE_NUM / decode_run_time / 1e6;
+				avg_tp += (double)B * BLOCK_SIZE * CORE_NUM / decode_run_time / 1e6;
 				avg_latency += decode_run_time * 1e6 / BLOCK_SIZE;
 			}
 			fprintf(fp, "\n");
@@ -276,7 +291,8 @@ int main()
 				free_nr5g_ldpc_simd_t(ldpc_arg[c]);
 			}
 			sem_destroy(&done_sem);
-			pool_destroy(0);
+			pool_destroy(0);    
+			// pthread_mutex_destroy(&mutex);
 		}
 
 	return 0;
