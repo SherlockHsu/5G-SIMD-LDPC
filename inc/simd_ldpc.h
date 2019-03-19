@@ -2,7 +2,7 @@
 #ifndef SIMD_LDPC_H
 #define SIMD_LDPC_H
 
-#define PAST_METHOD
+// #define PAST_METHOD
 
 #include <stdint.h>
 #include <stdlib.h>
