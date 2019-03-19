@@ -229,17 +229,17 @@ int main()
 #else
 					gettimeofday(&start, NULL);
 #endif
-					// for (int c = 0; c < CORE_NUM; ++c)
-					// 	nr5g_ldpc_simd_decoder(ldpc_arg[c]->rdmed_llr, ldpc_arg[c], I_max, coef, decoder_mode, ldpc_arg[c]->decoded_bits, decoded_llr[c]);
 					for (int c = 0; c < CORE_NUM; ++c)
-						pool_add_task(ldpc_decoder_thrd, (void *)ldpct[c], 0);
+						nr5g_ldpc_simd_decoder(ldpc_arg[c]->rdmed_llr, ldpc_arg[c], I_max, coef, decoder_mode, ldpc_arg[c]->decoded_bits, decoded_llr[c]);
 					// for (int c = 0; c < CORE_NUM; ++c)
-					// 	sem_wait(&done_sem);
-					while(cnt < CORE_NUM)
-						;
-					pthread_mutex_lock(&mutex);
-					cnt = 0;
-					pthread_mutex_unlock(&mutex);
+					// 	pool_add_task(ldpc_decoder_thrd, (void *)ldpct[c], 0);
+					// // for (int c = 0; c < CORE_NUM; ++c)
+					// // 	sem_wait(&done_sem);
+					// while(cnt < CORE_NUM)
+					// 	;
+					// pthread_mutex_lock(&mutex);
+					// cnt = 0;
+					// pthread_mutex_unlock(&mutex);
 #if defined(_MSC_VER)
 					QueryPerformanceCounter(&num);
 					end = num.QuadPart;
