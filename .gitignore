@@ -1,6 +1,6 @@
 main
 *.o
-BER.txt
+*.txt
 .vscode
 src/ldpc_hbg.c
 src/simd_ldpc.c

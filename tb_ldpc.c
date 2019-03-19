@@ -104,6 +104,12 @@ int main()
 	int B_list[2] = {8448, 3840};
 	int R_list[3] = {853, 768, 512};
 	int j, k;
+#ifdef TEST_MUTI_CORE
+	FILE *fp, *fq;
+			fp = fopen("mutlicore_tp.txt", "a");
+			fq = fopen("mutlicore_latency.txt", "a");
+#else
+#endif
 	for (int j = 0; j < 2; j++)
 		for (int k = 0; k < 3; k++)
 		{
@@ -136,7 +142,10 @@ int main()
 			int8_t *decbs_bits[CORE_NUM];
 			float EbN0, sigma2, sigma;
 			int32_t err_bits[BLOCK_SIZE];
+#ifndef TEST_MUTI_CORE
 			FILE *fp;
+			fp = fopen("BER.txt", "a");
+#endif
 
 #ifdef TEST_MUTI_CORE
 			ldpc_decoder_thrd_t *ldpct[CORE_NUM];
@@ -205,8 +214,6 @@ int main()
 
 			vslNewStream(&stream_g, VSL_BRNG_MCG31, 0);
 			vslNewStream(&stream_b, VSL_BRNG_MCG31, 1);
-
-			fp = fopen("BER.txt", "a");
 
 			avg_tp = 0.0;
 			avg_latency = 0.0;
@@ -285,25 +292,25 @@ int main()
 						;
 					cnt = 0;
 #else
-					#if defined(_MSC_VER)
-										QueryPerformanceFrequency(&num);
-										freq = num.QuadPart;
-										QueryPerformanceCounter(&num);
-										start = num.QuadPart;
-					#else
-										gettimeofday(&start, NULL);
-					#endif
+#if defined(_MSC_VER)
+					QueryPerformanceFrequency(&num);
+					freq = num.QuadPart;
+					QueryPerformanceCounter(&num);
+					start = num.QuadPart;
+#else
+					gettimeofday(&start, NULL);
+#endif
 					for (int c = 0; c < CORE_NUM; ++c)
 						nr5g_ldpc_simd_decoder(ldpc_arg[c]->rdmed_llr, ldpc_arg[c], I_max, coef, decoder_mode, ldpc_arg[c]->decoded_bits, decoded_llr[c]);
-					#if defined(_MSC_VER)
-										QueryPerformanceCounter(&num);
-										end = num.QuadPart;
-										decode_run_time += (double)(end - start) / freq;
-					#else
-										gettimeofday(&end, NULL);
-										timeuse = 1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec;
-										decode_run_time += (double)timeuse / 1000000.0;
-					#endif
+#if defined(_MSC_VER)
+					QueryPerformanceCounter(&num);
+					end = num.QuadPart;
+					decode_run_time += (double)(end - start) / freq;
+#else
+					gettimeofday(&end, NULL);
+					timeuse = 1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec;
+					decode_run_time += (double)timeuse / 1000000.0;
+#endif
 #endif
 
 					for (int c = 0; c < CORE_NUM; ++c)
@@ -326,26 +333,21 @@ int main()
 				// printf("encode_Throughput:%.2lfMbps\n", (double)B * BLOCK_SIZE * CORE_NUM / encode_run_time / 1e6);
 				// printf("decode_Latency:%lfus\n", decode_run_time * 1e6 / BLOCK_SIZE / CORE_NUM);
 				// printf("decode_Throughput:%.2lfMbps\n", (double)B * BLOCK_SIZE * CORE_NUM * CORE_NUM / decode_run_time / 1e6);
-				// fprintf(fp, "%.2e\t", (float)sum_err_bits / B / BLOCK_SIZE / CORE_NUM);
 
 				avg_tp += (double)B * BLOCK_SIZE * CORE_NUM / (decode_run_time / CORE_NUM) / 1e6;
 				avg_latency += decode_run_time / CORE_NUM * 1e6 / BLOCK_SIZE;
-#else				
-				// printf("Eb/N0:%.2f:\tBER:\t%.2e(%d/%d)\n", EbN0_list[indx_ebn0], (float)sum_err_bits / B / BLOCK_SIZE, sum_err_bits, B * BLOCK_SIZE * CORE_NUM);
-				// printf("encode_Latency:%lfus\n", encode_run_time * 1e6 / BLOCK_SIZE);
-				// printf("encode_Throughput:%.2lfMbps\n", (double)B * BLOCK_SIZE * CORE_NUM / encode_run_time / 1e6);
-				// printf("decode_Latency:%lfus\n", decode_run_time * 1e6 / BLOCK_SIZE);
-				// printf("decode_Throughput:%.2lfMbps\n", (double)B * BLOCK_SIZE * CORE_NUM / decode_run_time / 1e6);
-				// fprintf(fp, "%.2e\t", (float)sum_err_bits / B / BLOCK_SIZE / CORE_NUM);
+#else
+				printf("Eb/N0:%.2f:\tBER:\t%.2e(%d/%d)\n", EbN0_list[indx_ebn0], (float)sum_err_bits / B / BLOCK_SIZE, sum_err_bits, B * BLOCK_SIZE * CORE_NUM);
+				printf("encode_Latency:%lfus\n", encode_run_time * 1e6 / BLOCK_SIZE);
+				printf("encode_Throughput:%.2lfMbps\n", (double)B * BLOCK_SIZE * CORE_NUM / encode_run_time / 1e6);
+				printf("decode_Latency:%lfus\n", decode_run_time * 1e6 / BLOCK_SIZE);
+				printf("decode_Throughput:%.2lfMbps\n", (double)B * BLOCK_SIZE * CORE_NUM / decode_run_time / 1e6);
+				fprintf(fp, "%.2e\t", (float)sum_err_bits / B / BLOCK_SIZE / CORE_NUM);
 
 				avg_tp += (double)B * BLOCK_SIZE * CORE_NUM / decode_run_time / 1e6;
 				avg_latency += decode_run_time * 1e6 / BLOCK_SIZE;
 #endif
-				
-				
 			}
-			fprintf(fp, "\n");
-			fclose(fp);
 
 			avg_tp /= test_size;
 			avg_latency /= test_size;
@@ -353,6 +355,15 @@ int main()
 			printf("B = %d, R = %d\n", B, R);
 			printf("Average Throughput:\t%.2lfMbps\n", avg_tp);
 			printf("Average Latency:\t%.2lfus\n", avg_latency);
+
+#ifdef TEST_MUTI_CORE
+			fprintf(fp, "%.2lf\t", avg_tp);
+			fprintf(fq, "%.2lf\t", avg_latency);
+#else
+			fprintf(fp, "\n");
+			fclose(fp);
+#endif
+
 			for (int c = 0; c < CORE_NUM; ++c)
 			{
 				free(info_bits_32[c]);
@@ -371,6 +382,12 @@ int main()
 			// pthread_mutex_destroy(&mutex);
 #endif
 		}
+#ifdef TEST_MUTI_CORE
+	fprintf(fp, "\n");
+	fprintf(fq, "\n");
+	fclose(fp);
+	fclose(fq);
+#endif
 
 	return 0;
 }
