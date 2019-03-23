@@ -103,7 +103,7 @@ void ldpc_decoder_thrd(void *arg)
 
 #define B_NUM 2
 #define R_NUM 1
-#define EBN0_SIZE 11
+#define EBN0_SIZE 21
 #define BLOCK_SIZE 10000
 
 int main()
@@ -188,7 +188,7 @@ int main()
 				break;
 			}
 
-			float EbN0_list[EBN0_SIZE] = {0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0};
+			float EbN0_list[EBN0_SIZE] = {0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0};
 			test_size = EBN0_SIZE;
 #ifdef TEST_MUTI_CORE
 			sem_init(&done_sem, 0, 0);
