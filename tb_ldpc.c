@@ -8,12 +8,9 @@
 
 // #define TEST_MUTI_CORE
 
-#ifdef TEST_MUTI_CORE
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
-#endif
 #include <sched.h>
-#endif
 
 #include <stdlib.h>
 #include <stdint.h>
