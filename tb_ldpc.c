@@ -28,9 +28,6 @@
 #include <sys/time.h>
 #endif
 
-#define BLOCK_SIZE 10000
-#define EBN0_SIZE 6
-
 #ifdef TEST_MUTI_CORE
 #include <semaphore.h>
 #define CORE_NUM 2
@@ -104,10 +101,15 @@ void ldpc_decoder_thrd(void *arg)
 }
 #endif
 
+#define B_NUM 2
+#define R_NUM 1
+#define EBN0_SIZE 11
+#define BLOCK_SIZE 10000
+
 int main()
 {
-	int B_list[2] = {8448, 3840};
-	int R_list[3] = {853, 768, 512};
+	int B_list[B_NUM] = {8448, 3840};
+	int R_list[R_NUM] = {512};
 	int j, k;
 #ifdef TEST_MUTI_CORE
 	FILE *fp, *fq;
@@ -115,8 +117,8 @@ int main()
 			fq = fopen("mutlicore_latency.txt", "a");
 #else
 #endif
-	for (int j = 0; j < 2; j++)
-		for (int k = 0; k < 3; k++)
+	for (int j = 0; j < B_NUM; j++)
+		for (int k = 0; k < R_NUM; k++)
 		{
 			double encode_run_time;
 #ifndef TEST_MUTI_CORE
@@ -186,7 +188,7 @@ int main()
 				break;
 			}
 
-			float EbN0_list[EBN0_SIZE] = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0};
+			float EbN0_list[EBN0_SIZE] = {0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5 4.0, 4.5, 5.0};
 			test_size = EBN0_SIZE;
 #ifdef TEST_MUTI_CORE
 			sem_init(&done_sem, 0, 0);
