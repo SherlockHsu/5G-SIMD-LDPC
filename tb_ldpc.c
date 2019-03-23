@@ -11,6 +11,7 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #include <sched.h>
+#endif
 
 #include <stdlib.h>
 #include <stdint.h>
