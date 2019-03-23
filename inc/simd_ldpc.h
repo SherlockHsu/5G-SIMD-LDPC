@@ -173,4 +173,6 @@ void nr5g_ldpc_simd_cbs_enc_rm(const int8_t *info_bits, nr5g_ldpc_simd_t *h, int
 
 void nr5g_ldpc_simd_rdm_dec_decbs(const float *llr, nr5g_ldpc_simd_t *h, int32_t I_max, int32_t decoder_mode, float coef, int8_t *decbs_bits, float *decoded_llr);
 
+int is_ldpc_code(nr5g_ldpc_simd_t *h, uint8_t *code);
+
 #endif // !SIMD_LDPC_H
