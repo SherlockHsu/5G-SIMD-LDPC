@@ -72,7 +72,7 @@ int	fast_decide_bit_avx512(const int8_t *input, int len, uint8_t *output)
     int remain = len % 64;
     __m512i zero_zmm = _mm512_setzero_si512();
     __m512i input_zmm;
-    __mmask64 output_m64;
+    __mmask64 output_m64, mask_m64;
     __m512i output_zmm;
     const int8_t *pi = input;
     uint8_t *po = output;
