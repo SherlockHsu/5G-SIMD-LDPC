@@ -1,4 +1,4 @@
-SRCS = $(wildcard *.c) src/thread_pool.c
+SRCS = $(wildcard *.c) src/thread_pool.c src/crc.c src/simd_bit.c
 
 OBJS = $(SRCS:.c = .o)
 

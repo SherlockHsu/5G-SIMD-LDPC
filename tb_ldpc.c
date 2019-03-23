@@ -1,8 +1,12 @@
 // version 2.2
 #include "simd_ldpc.h"
 #include "thread_pool.h"
+#ifdef USE_STOP
+#include "crc.h"
+#include "simd_bit.h"
+#endif
 
-#define TEST_MUTI_CORE
+// #define TEST_MUTI_CORE
 
 #ifdef TEST_MUTI_CORE
 #ifndef _GNU_SOURCE
@@ -36,7 +40,10 @@
 #define CORE_NUM 1
 #endif
 
-int num;
+#ifdef USE_STOP
+#define CRC_24A 0x1864CFB
+#endif
+
 #ifdef TEST_MUTI_CORE
 pthread_mutex_t mutex;
 pthread_mutex_t demutex;
@@ -132,6 +139,7 @@ int main()
 			nr5g_ldpc_simd_t *ldpc_arg[CORE_NUM];
 			VSLStreamStatePtr stream_g;
 			VSLStreamStatePtr stream_b;
+			int8_t *info_byte[CORE_NUM];
 			int8_t *info_bits[CORE_NUM];
 			int32_t *info_bits_32[CORE_NUM];
 			int8_t *rmed_bits[CORE_NUM];
@@ -151,6 +159,11 @@ int main()
 			ldpc_decoder_thrd_t *ldpct[CORE_NUM];
 			sem_t done_sem;
 			pool_init(0, CORE_NUM, 0);
+#endif
+
+#ifdef USE_STOP
+			nr5g_crc_t crc_t;
+    		nr5g_crc_init(&crc_t, CRC_24A, 24);
 #endif
 
 			/* set parameters */
@@ -189,9 +202,11 @@ int main()
 			{
 				ldpc_arg[c] = (nr5g_ldpc_simd_t *)malloc(sizeof(nr5g_ldpc_simd_t));
 				nr5g_ldpc_simd_init(ldpc_arg[c], B, R);
+				ldpc_arg[c]->crc_t = &crc_t;
 
 				info_bits_32[c] = (int32_t *)malloc(sizeof(int32_t) * ldpc_arg[c]->B);
 				info_bits[c] = (int8_t *)malloc(sizeof(int8_t) * ldpc_arg[c]->B);
+				info_byte[c] = (int8_t *)malloc(sizeof(int8_t) * ldpc_arg[c]->B / 8);
 				rmed_bits[c] = (int8_t *)malloc(sizeof(int8_t) * ldpc_arg[c]->G);
 				mapped_sig[c] = (float *)malloc(sizeof(float) * ldpc_arg[c]->G);
 				noise[c] = (float *)malloc(sizeof(float) * ldpc_arg[c]->G);
@@ -242,6 +257,10 @@ int main()
 						viRngBernoulli(VSL_RNG_METHOD_BERNOULLI_ICDF, stream_b, B, info_bits_32[c], 0.5);
 						for (i = 0; i < B; i++)
 							info_bits[c][i] = (int8_t)info_bits_32[c][i];
+
+						fast_decide_avx512(info_bits[c], B, info_byte[c]);
+						nr5g_crc_attach_byte(&crc_t, info_byte[c], B - 24);
+						fast_extend_avx512(info_byte[c], B / 8, info_bits[c]);
 
 						/* cbs */
 						nr5g_ldpc_simd_cbs(info_bits[c], ldpc_arg[c], ldpc_arg[c]->cbs_bits);

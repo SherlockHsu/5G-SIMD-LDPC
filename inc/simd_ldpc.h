@@ -5,6 +5,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <immintrin.h>
+#include "crc.h"
+
+#define USE_STOP
 
 #define SIMD_MODE_SSE 1
 #define SIMD_MODE_AVX2 2
@@ -81,6 +84,10 @@ typedef struct nr5g_ldpc_simd_t
 	__mmask64 *mmask_avx512;	 // mmask1 for flag=2(length:whole_degree)
 	__mmask64 *mmask_pre_avx512; // mmask2 for flag=2(length:whole_degree)
 	__mmask64 endmmask_avx512;   // mmask for flag=1
+#endif
+
+#ifdef USE_STOP
+	nr5g_crc_t *crc_t;
 #endif
 
 } nr5g_ldpc_simd_t;
