@@ -1,10 +1,8 @@
 // version 2.2
 #include "simd_ldpc.h"
 #include "thread_pool.h"
-#ifdef USE_STOP
 #include "crc.h"
 #include "simd_bit.h"
-#endif
 
 // #define TEST_MUTI_CORE
 
