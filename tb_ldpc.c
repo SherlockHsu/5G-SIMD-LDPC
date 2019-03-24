@@ -252,9 +252,9 @@ int main()
 						for (i = 0; i < B; i++)
 							info_bits[c][i] = (int8_t)info_bits_32[c][i];
 
-						// fast_decide_byte_avx512(info_bits[c], B, info_byte[c]);
-						// nr5g_crc_attach_byte(&crc_t, info_byte[c], B - 24);
-						// fast_extend_avx512(info_byte[c], B / 8, info_bits[c]);
+						fast_decide_byte_avx512(info_bits[c], B, info_byte[c]);
+						nr5g_crc_attach_byte(&crc_t, info_byte[c], B - 24);
+						fast_extend_avx512(info_byte[c], B / 8, info_bits[c]);
 
 						/* cbs */
 						nr5g_ldpc_simd_cbs(info_bits[c], ldpc_arg[c], ldpc_arg[c]->cbs_bits);
