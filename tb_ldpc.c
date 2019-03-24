@@ -109,7 +109,7 @@ void ldpc_decoder_thrd(void *arg)
 int main()
 {
 	int B_list[B_NUM] = {8448, 3840};
-	int R_list[R_NUM] = {512};
+	int R_list[R_NUM] = {853};
 	int j, k;
 #ifdef TEST_MUTI_CORE
 	FILE *fp, *fq;
@@ -171,7 +171,7 @@ int main()
 			// R = 853;//512,768,853
 			B = B_list[j];
 			R = R_list[k]; //512,768,853
-			I_max = 1;
+			I_max = 10;
 			decoder_mode = DECODER_MODE_OMS;
 
 			switch (decoder_mode)
