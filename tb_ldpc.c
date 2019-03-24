@@ -147,8 +147,10 @@ int main()
 			float EbN0, sigma2, sigma;
 			int32_t err_bits[BLOCK_SIZE];
 #ifndef TEST_MUTI_CORE
-			FILE *fp;
+			FILE *fp, *ftp, *fla;
 			fp = fopen("BER.txt", "a");
+			ftp = fopen("stop_tp.txt", "a");
+			fla = fopen("stop_latency.txt", "a");
 #endif
 
 #ifdef TEST_MUTI_CORE
@@ -358,6 +360,8 @@ int main()
 				printf("decode_Latency:%lfus\n", decode_run_time * 1e6 / BLOCK_SIZE);
 				printf("decode_Throughput:%.2lfMbps\n", (double)B * BLOCK_SIZE * CORE_NUM / decode_run_time / 1e6);
 				fprintf(fp, "%.2e\t", (float)sum_err_bits / B / BLOCK_SIZE / CORE_NUM);
+				fprintf(ftp, "%.2lf\t", (double)B * BLOCK_SIZE * CORE_NUM / decode_run_time / 1e6);
+				fprintf(fla, "%.2lf\t", decode_run_time * 1e6 / BLOCK_SIZE);
 
 				avg_tp += (double)B * BLOCK_SIZE * CORE_NUM / decode_run_time / 1e6;
 				avg_latency += decode_run_time * 1e6 / BLOCK_SIZE;
@@ -376,7 +380,11 @@ int main()
 			fprintf(fq, "%.2lf\t", avg_latency);
 #else
 			fprintf(fp, "\n");
+			fprintf(ftp, "\n");
+			fprintf(fla, "\n");
 			fclose(fp);
+			fclose(ftp);
+			fclose(fla);
 #endif
 
 			for (int c = 0; c < CORE_NUM; ++c)
