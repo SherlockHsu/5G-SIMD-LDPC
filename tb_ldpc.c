@@ -171,7 +171,7 @@ int main()
 			// R = 853;//512,768,853
 			B = B_list[j];
 			R = R_list[k]; //512,768,853
-			I_max = 10;
+			I_max = 1;
 			decoder_mode = DECODER_MODE_OMS;
 
 			switch (decoder_mode)
