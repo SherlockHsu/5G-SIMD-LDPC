@@ -251,7 +251,7 @@ int main()
 					{
 						viRngBernoulli(VSL_RNG_METHOD_BERNOULLI_ICDF, stream_b, B, info_bits_32[c], 0.5);
 						for (i = 0; i < B; i++)
-							info_bits[c][i] = (int8_t)info_bits_32[c][i];
+							info_bits[c][i] = -(int8_t)info_bits_32[c][i];
 // #ifdef USE_STOP
 						fast_decide_byte_avx512(info_bits[c], B, info_byte[c]);
 						nr5g_crc_attach_byte(&crc_t, info_byte[c], B - 24);
