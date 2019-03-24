@@ -33,9 +33,7 @@
 #define CORE_NUM 1
 #endif
 
-#ifdef USE_STOP
 #define CRC_24A 0x1864CFB
-#endif
 
 #ifdef TEST_MUTI_CORE
 pthread_mutex_t mutex;
