@@ -34,6 +34,7 @@
 #endif
 
 #define CRC_24A 0x1864CFB
+#define BLOCK_SIZE 10000
 
 #ifdef TEST_MUTI_CORE
 pthread_mutex_t mutex;
@@ -100,7 +101,6 @@ void ldpc_decoder_thrd(void *arg)
 #define B_NUM 2
 #define R_NUM 3
 #define EBN0_SIZE 6
-#define BLOCK_SIZE 10000
 
 int main()
 {
