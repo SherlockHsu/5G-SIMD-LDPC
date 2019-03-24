@@ -86,9 +86,7 @@ typedef struct nr5g_ldpc_simd_t
 	__mmask64 endmmask_avx512;   // mmask for flag=1
 #endif
 
-#ifdef USE_STOP
 	nr5g_crc_t *crc_t;
-#endif
 
 } nr5g_ldpc_simd_t;
 
