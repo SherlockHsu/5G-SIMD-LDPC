@@ -4,7 +4,7 @@
 #include "crc.h"
 #include "simd_bit.h"
 
-// #define TEST_MUTI_CORE
+#define TEST_MUTI_CORE
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -28,7 +28,7 @@
 
 #ifdef TEST_MUTI_CORE
 #include <semaphore.h>
-#define CORE_NUM 2
+#define CORE_NUM 1
 #else
 #define CORE_NUM 1
 #endif
@@ -105,7 +105,7 @@ void ldpc_decoder_thrd(void *arg)
 int main()
 {
 	int B_list[B_NUM] = {8448, 3840};
-	int R_list[R_NUM] = {853};
+	int R_list[R_NUM] = {853, 768, 512};
 	int j, k;
 #ifdef TEST_MUTI_CORE
 	FILE *fp, *fq;
