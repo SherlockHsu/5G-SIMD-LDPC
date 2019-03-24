@@ -159,10 +159,8 @@ int main()
 			pool_init(0, CORE_NUM, 0);
 #endif
 
-#ifdef USE_STOP
 			nr5g_crc_t crc_t;
     		nr5g_crc_init(&crc_t, CRC_24A, 24);
-#endif
 
 			/* set parameters */
 			// B = 8448;
