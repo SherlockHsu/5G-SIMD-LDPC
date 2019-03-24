@@ -7,7 +7,7 @@
 #include <immintrin.h>
 #include "crc.h"
 
-// #define USE_STOP
+#define USE_STOP
 
 #define SIMD_MODE_SSE 1
 #define SIMD_MODE_AVX2 2
