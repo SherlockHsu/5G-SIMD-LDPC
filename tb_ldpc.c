@@ -184,7 +184,8 @@ int main()
 				break;
 			}
 
-			float EbN0_list[EBN0_SIZE] = {0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0};
+			float EbN0_list[EBN0_SIZE] = {-6.0, -5.5, -5.0, -4.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0};
+			// float EbN0_list[EBN0_SIZE] = {0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0};
 			// float EbN0_list[EBN0_SIZE] = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0};
 			// float EbN0_list[EBN0_SIZE] = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0};
 			test_size = EBN0_SIZE;
@@ -235,7 +236,8 @@ int main()
 			for (indx_ebn0 = 0; indx_ebn0 < test_size; indx_ebn0++)
 			{
 				EbN0 = EbN0_list[indx_ebn0];
-				sigma2 = (float)(1 / (pow(10, (double)EbN0 / 10) * 2 * R / 1024));
+				// sigma2 = (float)(1 / (pow(10, (double)EbN0 / 10) * 2 * R / 1024));
+				sigma2 = (float)(1 / pow(10, (double)EbN0 / 10));
 				sigma = (float)sqrt(sigma2);
 				sum_err_bits = 0;
 				encode_run_time = 0.0;
