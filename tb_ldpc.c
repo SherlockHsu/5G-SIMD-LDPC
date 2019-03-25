@@ -98,14 +98,14 @@ void ldpc_decoder_thrd(void *arg)
 }
 #endif
 
-#define B_NUM 2
-#define R_NUM 3
+#define B_NUM 1
+#define R_NUM 10
 #define EBN0_SIZE 21
 
 int main()
 {
-	int B_list[B_NUM] = {8448, 3840};
-	int R_list[R_NUM] = {853, 768, 512};
+	int B_list[B_NUM] = {8448};
+	int R_list[R_NUM] = {120, 157, 193, 251, 308, 379, 449, 526, 602, 679};
 	int j, k;
 #ifdef TEST_MUTI_CORE
 	FILE *fp, *fq;
