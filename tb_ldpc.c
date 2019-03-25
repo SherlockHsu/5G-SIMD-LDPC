@@ -184,7 +184,7 @@ int main()
 				break;
 			}
 
-			float EbN0_list[EBN0_SIZE] = {0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0};
+			float EbN0_list[EBN0_SIZE] = {5.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0};
 			// float EbN0_list[EBN0_SIZE] = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0};
 			// float EbN0_list[EBN0_SIZE] = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0};
 			test_size = EBN0_SIZE;
@@ -254,11 +254,11 @@ int main()
 					{
 						viRngBernoulli(VSL_RNG_METHOD_BERNOULLI_ICDF, stream_b, B, info_bits_32[c], 0.5);
 						for (i = 0; i < B; i++)
-							info_bits[c][i] = -(int8_t)info_bits_32[c][i];
+							info_bits[c][i] = (int8_t)info_bits_32[c][i];
 // #ifdef USE_STOP
-						fast_decide_byte_avx512(info_bits[c], B, info_byte[c]);
-						nr5g_crc_attach_byte(&crc_t, info_byte[c], B - 24);
-						fast_extend_avx512(info_byte[c], B / 8, info_bits[c]);
+						// fast_decide_byte_avx512(info_bits[c], B, info_byte[c]);
+						// nr5g_crc_attach_byte(&crc_t, info_byte[c], B - 24);
+						// fast_extend_avx512(info_byte[c], B / 8, info_bits[c]);
 // #endif
 						/* cbs */
 						nr5g_ldpc_simd_cbs(info_bits[c], ldpc_arg[c], ldpc_arg[c]->cbs_bits);
