@@ -24,7 +24,7 @@ File Specification
 │   │   thread_pool.c               // Thread pool source file
 │
 └───lib
-│   │   libqc_simd_ldpc_decoder.a   // Static library for x86_64 Linux
+│   │   libsimd_5gfec.a             // Static library for x86_64 Linux
 │   
 └───example
     └───test_multicore              // example for multi-core test
