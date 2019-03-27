@@ -1,4 +1,4 @@
-// version 3.0
+// version 3.1
 #include "simd_ldpc.h"
 #include "simd_bit.h"
 #include "bit.h"

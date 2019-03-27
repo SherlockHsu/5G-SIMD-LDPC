@@ -1,4 +1,4 @@
-// version 2.2
+// version 3.1
 #ifndef SIMD_LDPC_H
 #define SIMD_LDPC_H
 
@@ -6,8 +6,6 @@
 #include <stdlib.h>
 #include <immintrin.h>
 #include "crc.h"
-
-// #define USE_STOP
 
 #define SIMD_MODE_AUTO 0
 #define SIMD_MODE_SSE 1

@@ -1,4 +1,4 @@
-// version 2.2
+// version 3.1
 #include "simd_ldpc.h"
 #include "simd_bit.h"
 #include "crc.h"
