@@ -7,14 +7,18 @@
 #include <immintrin.h>
 #include "crc.h"
 
-#define USE_STOP
+// #define USE_STOP
 
+#define SIMD_MODE_AUTO 0
 #define SIMD_MODE_SSE 1
 #define SIMD_MODE_AVX2 2
 #define SIMD_MODE_AVX512 3
 
 #define DECODER_MODE_OMS 1
 #define DECODER_MODE_NMS 2
+
+#define EARLY_STOP_OFF 0	// early stop function off
+#define EARLY_STOP_ON 1		// early stop function on
 
 typedef struct nr5g_ldpc_simd_t
 {
@@ -87,6 +91,7 @@ typedef struct nr5g_ldpc_simd_t
 #endif
 
 	nr5g_crc_t *crc_t;
+	uint8_t *byte_list;
 
 } nr5g_ldpc_simd_t;
 
@@ -94,7 +99,7 @@ typedef struct nr5g_ldpc_simd_t
 /*                            Declare LDPC initial functions                         */
 /*************************************************************************************/
 
-void nr5g_ldpc_simd_init(nr5g_ldpc_simd_t *h, int32_t B, int32_t R);
+void nr5g_ldpc_simd_init(nr5g_ldpc_simd_t *h, int32_t B, int32_t R, int32_t simd_mode);
 
 /* initial LDPC parameter */
 void nr5g_ldpc_simd_mode_init(nr5g_ldpc_simd_t *h);
@@ -157,11 +162,11 @@ void nr5g_ldpc_simd_rate_dematching_scb(const float *llr, nr5g_ldpc_simd_t *h, f
 /*                            Declare LDPC decode functions                          */
 /*************************************************************************************/
 
-void nr5g_ldpc_simd_decoder(const float *llr, nr5g_ldpc_simd_t *h, int32_t I_max, float coef, int32_t decoder_mode, int8_t *decoded_bits, float *decoded_llr);
+void nr5g_ldpc_simd_decoder(const float *llr, nr5g_ldpc_simd_t *h, int32_t I_max, float coef, int32_t decoder_mode, int32_t early_stop, int8_t *decoded_bits, float *decoded_llr);
 
 void nr5g_ldpc_fast_load_llr_simd_scb(const float *llr, nr5g_ldpc_simd_t *h, int32_t r);
 
-void nr5g_ldpc_simd_decoder_scb(nr5g_ldpc_simd_t *h, int32_t I_max, float coef, int32_t decoder_mode, int8_t *decoded_bits, float *decoded_llr, int32_t r);
+void nr5g_ldpc_simd_decoder_scb(nr5g_ldpc_simd_t *h, int32_t I_max, float coef, int32_t decoder_mode, int32_t early_stop, int8_t *decoded_bits, float *decoded_llr, int32_t r);
 
 /*************************************************************************************/
 /*                             Declare LDPC combo functions                          */
@@ -169,7 +174,7 @@ void nr5g_ldpc_simd_decoder_scb(nr5g_ldpc_simd_t *h, int32_t I_max, float coef, 
 
 void nr5g_ldpc_simd_cbs_enc_rm(const int8_t *info_bits, nr5g_ldpc_simd_t *h, int8_t *rmed_bits);
 
-void nr5g_ldpc_simd_rdm_dec_decbs(const float *llr, nr5g_ldpc_simd_t *h, int32_t I_max, int32_t decoder_mode, float coef, int8_t *decbs_bits, float *decoded_llr);
+void nr5g_ldpc_simd_rdm_dec_decbs(const float *llr, nr5g_ldpc_simd_t *h, int32_t I_max, int32_t decoder_mode, int32_t early_stop, float coef, int8_t *decbs_bits, float *decoded_llr);
 
 int is_ldpc_code(nr5g_ldpc_simd_t *h, uint8_t *code);
 

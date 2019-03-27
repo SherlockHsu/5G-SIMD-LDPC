@@ -1,12 +1,14 @@
-SRCS = $(wildcard *.c) src/thread_pool.c src/crc.c src/simd_bit.c
+CC = icc
+
+PWD = ../..
+
+SRCS = $(wildcard *.c $(PWD)/src/*.c)
 
 OBJS = $(SRCS:.c = .o)
 
-CC = icc
+INCLUDES = -I$(PWD)/inc
 
-INCLUDES = -I./inc
-
-LIBS = -lm -lpthread -lmkl_rt -fopenmp ./lib/libsimd_ldpc.a
+LIBS = -lm -lpthread -lmkl_rt -fopenmp $(PWD)/lib/*.a
 
 CCFLAGS = -Wall -O3 -march=core-avx512 -std=c99 -g
 

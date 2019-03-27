@@ -1,8 +1,8 @@
 5G-SIMD-LDPC
 ==============================
 
-* Vesion:   2.2
-* Date:     2019.02.26
+* Vesion:   3.1
+* Date:     2019.03.27
 * Author:   Xu Yi
 
 File Specification
@@ -10,22 +10,42 @@ File Specification
 
 ```
 5G-SIMD-LDPC
-│   Makefile
 │   README.md
-│   tb_ldpc.c           // Test main source file
+│   LICENSE
 │
 └───inc
-│   │   simd_ldpc.h     // Head file
+│   │   bit.h                       // Data pack and unpack head file
+│   │   crc.h                       // CRC head file
+│   │   simd_bit.h                  // Data pack and unpack with SIMD head file
+│   │   simd_ldpc.h                 // SIMD LDPC head file
+│   │   thread_pool.h               // Thread pool head file
 │   
+└───src
+│   │   thread_pool.c               // Thread pool source file
+│
 └───lib
-    │   libsimd_ldpc.a  // Static library for Linux
-    │   simd_ldpc.lib   // Static library for Windows
+│   │   libqc_simd_ldpc_decoder.a   // Static library for x86_64 Linux
+│   
+└───example
+    └───test_multicore              // example for multi-core test
+    │   │   test_multicore.c
+    │   │   Makefile
+    │    
+    └───test_simd                   // example for different SIMD instruction sets
+    │   │   test_simd.c
+    │   │   Makefile
+    │    
+    └───test_stop                   // example for early stopping strategy
+        │   test_stip.c
+        │   Makefile
 ```
 
 Build and Execution Instructions
 ------------------------------
 
 ### Build:
+> cd example/[example name]/
+
 > make
 
 ### Execution:
@@ -47,11 +67,11 @@ Decoder Performance
 
 * Base Graph: 5GNR Base Graph 1(i<sub>LS</sub> = 2)
 * Code Block Length: 8448
-* Code Rate: 948/1024
+* Code Rate: 5/6
 
 ### Result:
 | SIMD          | Throughput    | Code Block Latency    |
 | ------------- | ------------- | --------------------- |
-| SSE4.1        | 77.54Mbps     | 108.95μs              |
-| AVX2          | 145.14Mbps    | 58.21μs               |
-| AVX512        | 223.41Mbps    | 37.81μs               |
+| SSE4.1        | 62.34Mbps     | 135.52μs              |
+| AVX2          | 130.23Mbps    | 64.87μs               |
+| AVX512        | 223.29Mbps    | 37.83μs               |
